@@ -5,6 +5,4 @@ dist/
 docs/
 webdocs/
 miniscript/
-test/**/*.js
-test/**/*.d.ts
 src/bindings.js

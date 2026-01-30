@@ -109,7 +109,7 @@ void miniscript_compile(const char* desc, char* msout, int msoutlen, char* costo
         } else {
             Output("false", issanesublevel, issanesublevellen);
         }
-        if (ret->IsSaneTopLevel()) {
+        if (ret->IsValidTopLevel()) {
             Output("true", issane, issanelen);
         } else {
             Output("false", issane, issanelen);
@@ -140,7 +140,7 @@ void miniscript_analyze(const char* ms, char* costout, int costoutlen, char* asm
         } else {
             Output("false", issanesublevel, issanesublevellen);
         }
-        if (ret->IsSaneTopLevel()) {
+        if (ret->IsValidTopLevel()) {
             Output("true", issane, issanelen);
         } else {
             Output("false", issane, issanelen);

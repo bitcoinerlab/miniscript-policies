@@ -1,0 +1,11 @@
+--- compiler.cpp.bak	2026-01-30 13:12:43
++++ compiler.cpp	2026-01-30 13:12:54
+@@ -848,7 +848,7 @@
+         }
+         if (data.size() == 20) {
+             if (data == std::vector<unsigned char>(20, 0x99)) {
+-                ret += "<h>";
++                ret += "<H>";
+             } else if (data[0] == 'P' && data[1] == 'K' && data[2] == 'h') {
+                 while (data.size() && data.back() == 0) data.pop_back();
+                 ret += "<HASH160(" + std::string((const char*)data.data() + 3, data.size() - 3) + ")>";
