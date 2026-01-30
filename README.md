@@ -1,7 +1,9 @@
 # Miniscript Policies
 
-This package exposes the reference C++ Miniscript policy compiler in JavaScript
-via Emscripten. It is a companion to https://github.com/bitcoinerlab/miniscript,
+This package exposes [the reference C++
+Miniscript](https://github.com/sipa/miniscript) policy compiler in JavaScript
+via Emscripten. It is a companion to
+[https://github.com/bitcoinerlab/miniscript](https://github.com/bitcoinerlab/miniscript),
 which does the heavy lifting for compilation and satisfactions.
 
 Use this package when you need to compile policies into Miniscript expressions
