@@ -1,34 +1,37 @@
 // To run it: "node ./example.js"
 
-const { compilePolicy, compileMiniscript, ready } = require("./dist/index.js");
+const { compilePolicy, compilePolicyTaproot, ready } = require("./dist/index.js");
 
 (async () => {
   await ready;
 
-  const policy = "or(and(pk(A),older(8640)),pk(B))";
+  const p2wshPolicy = "or(and(pk(A),older(8640)),pk(B))";
+  const taprootPolicy =
+    "or(and(thresh(2,pk(A),pk(B),pk(C)),and(thresh(2,pk(D),sha256(H),older(144)),after(700000))),and(pk(E),hash160(H)))";
 
-  const {
-    miniscript,
-    asm: asmFromPolicy,
-    issane: issaneFromPolicy,
-  } = compilePolicy(policy);
+  const p2wsh = compilePolicy(p2wshPolicy);
+  const taproot = compilePolicyTaproot(taprootPolicy);
 
-  const { asm: asmFromMiniscript, issane: issaneFromMiniscript } =
-    compileMiniscript(miniscript);
+  if (!p2wsh.issane) {
+    console.warn("Policy result is not sane for P2WSH:", p2wsh.miniscript);
+  } else {
+    console.log({
+      policy: p2wshPolicy,
+      miniscript: p2wsh.miniscript,
+      asm: p2wsh.asm,
+      issane: p2wsh.issane,
+    });
+  }
 
-  console.assert(asmFromPolicy === asmFromMiniscript, "ERROR: Asm mismatch.");
-  console.assert(
-    issaneFromPolicy === issaneFromMiniscript,
-    "ERROR: issane mismatch.",
-  );
+  if (!taproot.issane) {
+    console.warn("Policy result is not sane for tapscript:", taproot.miniscript);
+  } else {
+    console.log({
+      policy: taprootPolicy,
+      taprootMiniscript: taproot.miniscript,
+      hasMultiA: taproot.miniscript.includes("multi_a("),
+      hasNestedThresh: taproot.miniscript.includes("thresh(")
+    });
+  }
 
-  console.log({
-    miniscript,
-    asm: asmFromMiniscript,
-    issane: issaneFromMiniscript,
-  });
-
-  console.log(
-    compileMiniscript("and_v(v:pk(key),or_b(l:after(100),al:after(200)))"),
-  );
 })();
