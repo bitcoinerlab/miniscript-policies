@@ -1,14 +1,17 @@
-export declare const compilePolicy: (miniscript: string) => {
+export declare const compilePolicy: (policy: string) => {
   miniscript: string;
   asm: string;
   issane: boolean;
   issanesublevel: boolean;
 };
 
-export declare const compileMiniscript: (miniscript: string) => {
-  asm: string;
+export type CompilePolicyTaprootResult = {
+  miniscript: string;
   issane: boolean;
-  issanesublevel: boolean;
 };
+
+export declare const compilePolicyTaproot: (
+  policy: string
+) => CompilePolicyTaprootResult;
 
 export declare const ready: Promise<void>;

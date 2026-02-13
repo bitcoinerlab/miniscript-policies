@@ -1,8 +1,9 @@
 // Initial author: Pieter Wuille ( https://github.com/sipa/miniscript/blob/master/index.html)
 // Adapted by Jose-Luis Landabaso - https://bitcoinerlab.com:
-//  compilePolicy, compileMiniscript with issane, issanesublevel and cleanAsm
+//  compilePolicy and compilePolicyTaproot with sanity flags
 
 import bindings from './bindings.js';
+import { analyzeMiniscript } from '@bitcoinerlab/miniscript';
 
 const cleanAsm = asm =>
   asm
@@ -12,7 +13,6 @@ const cleanAsm = asm =>
 
 let Module;
 let em_miniscript_compile;
-let em_miniscript_analyze;
 let modulePromise;
 
 const initModule = () => {
@@ -28,13 +28,6 @@ const initModule = () => {
         'number',
         'number'
       ]);
-      em_miniscript_analyze = Module.cwrap('miniscript_analyze', 'none', [
-        'string',
-        'number',
-        'number',
-        'number',
-        'number'
-      ]);
       return Module;
     });
   }
@@ -45,7 +38,7 @@ const initModule = () => {
 export const ready = initModule();
 
 const ensureReady = () => {
-  if (!Module || !em_miniscript_compile || !em_miniscript_analyze) {
+  if (!Module || !em_miniscript_compile) {
     throw new Error('Miniscript bindings not ready. Await ready before calling compile functions.');
   }
 };
@@ -59,12 +52,10 @@ const ensureReady = () => {
  */
 
 /**
- * @typedef {Object} CompileMiniscriptResult
- * @property {string} asm - The Bitcoin asm code of the compiled miniscript expression.
+ * @typedef {Object} CompilePolicyTaprootResult
+ * @property {string} miniscript - Rewritten tapscript miniscript, or an error marker string.
  * @property {boolean} issane - Whether the miniscript is sane at the top level.
- * @property {boolean} issanesublevel - Whether the miniscript is sane at the sublevel.
  */
-
 
 /**
  * Compiles a miniscript policy into a miniscript expression (if possible).
@@ -109,41 +100,65 @@ export const compilePolicy = policy => {
   return result;
 };
 
-/**
- * Compiles a miniscript expression and returns its asm code.
- * @function
- *
- * @param {string} miniscript - A miniscript expression.
- * @returns {CompileMiniscriptResult}
- */
-export const compileMiniscript = miniscript => {
-  ensureReady();
-  const analysis = Module._malloc(50000);
-  const asm = Module._malloc(100000);
-  const issane = Module._malloc(10);
-  const issanesublevel = Module._malloc(10);
-  em_miniscript_analyze(
-    miniscript,
-    analysis,
-    50000,
-    asm,
-    100000,
-    issane,
-    10,
-    issanesublevel,
-    10
-  );
-  const result_asm = Module.UTF8ToString(asm);
-  const result_issane = Module.UTF8ToString(issane);
-  const result_issanesublebel = Module.UTF8ToString(issanesublevel);
-  Module._free(analysis);
-  Module._free(asm);
-  Module._free(issane);
-  Module._free(issanesublevel);
+const isCompileFailure = miniscript =>
+  typeof miniscript !== 'string' ||
+  miniscript === '[compile error]' ||
+  miniscript.startsWith('[exception:');
 
-  return {
-    asm: cleanAsm(result_asm),
-    issane: result_issane === 'true' ? true : false,
-    issanesublevel: result_issanesublebel === 'true' ? true : false
-  };
+const rewriteForTapscript = miniscript => miniscript.replace(/\bmulti\(/g, 'multi_a(');
+const taprootRewriteError = message => `[taproot rewrite error] ${message}`;
+const taprootRewriteException = message => `[taproot rewrite exception] ${message}`;
+
+/**
+ * Compiles a miniscript policy into a tapscript miniscript expression.
+ *
+ * Strict mode behavior:
+ * 1) compile with the C++ policy compiler
+ * 2) rewrite multi() to multi_a()
+ * 3) validate rewritten miniscript under tapscript rules
+ *
+ * @param {string} policy - The miniscript policy to compile.
+ * @returns {CompilePolicyTaprootResult}
+ */
+export const compilePolicyTaproot = policy => {
+  ensureReady();
+
+  const base = compilePolicy(policy);
+
+  if (isCompileFailure(base.miniscript)) {
+    return {
+      miniscript:
+        typeof base.miniscript === 'string' ? base.miniscript : '[compile error]',
+      issane: false
+    };
+  }
+
+  const miniscript = rewriteForTapscript(base.miniscript);
+
+  try {
+    const analysis = analyzeMiniscript(miniscript, { tapscript: true });
+    const isValidAndSane = analysis.valid && analysis.issane && analysis.issanesublevel;
+
+    if (!isValidAndSane) {
+      return {
+        miniscript: taprootRewriteError(
+          analysis.error ||
+            'multi() to multi_a() rewrite produced miniscript that is not valid/sane in tapscript context.'
+        ),
+        issane: false
+      };
+    }
+
+    return {
+      miniscript,
+      issane: analysis.issane
+    };
+  } catch (error) {
+    return {
+      miniscript: taprootRewriteException(
+        error instanceof Error ? error.message : String(error)
+      ),
+      issane: false
+    };
+  }
 };
