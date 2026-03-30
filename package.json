@@ -22,7 +22,7 @@
   "scripts": {
     "build": "rollup -c --bundleConfigAsCjs",
     "build:prod": "NODE_ENV=production rollup -c --bundleConfigAsCjs",
-    "prepublishOnly": "npm test",
+    "prepublishOnly": "rm -rf dist/ && npm test",
     "test": "make clean && make && npm run build:prod && jest"
   },
   "COMMENT_babel": "Babel plugins are are only needed for the jest testing environment. Jest needs to use commonjs. Also, jest cannot handle ESM converted code, since it uses 'import.meta.url'. See src/bindings.js. babel-plugin-transform-import-meta fixes it.",
