@@ -45,7 +45,7 @@
     "@bitcoinerlab/configs": "^2.0.0",
     "@rollup/plugin-commonjs": "^29.0.0",
     "babel-plugin-transform-import-meta": "^2.2.0",
-    "rollup": "^3.29.5"
+    "rollup": "^3.30.0"
   },
   "dependencies": {
     "@bitcoinerlab/miniscript": "^2.0.0",
