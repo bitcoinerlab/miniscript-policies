@@ -48,7 +48,7 @@
     "rollup": "^3.30.0"
   },
   "dependencies": {
-    "@bitcoinerlab/miniscript": "^2.0.0",
+    "@bitcoinerlab/miniscript": "^2.0.1",
     "bip68": "^1.0.4"
   },
   "bugs": {
